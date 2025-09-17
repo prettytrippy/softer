@@ -1,14 +1,14 @@
-from softer.arithmetic.softmod import SoftMod
+from softer.arithmetic.softfloor import SoftFloor
 import torch
 import torch.nn as nn
 
-class SoftCeil(nn.Module):
+class SoftRound(nn.Module):
     """
     """
 
     def __init__(self, k=2) -> None:
         super().__init__()
-        self.softmod = SoftMod(k)
+        self.softfloor = SoftFloor(k)
 
     def forward(self, x):
-        return x - self.softmod(x + 1.0, 1.0) 
+        return self.softfloor(x + 1.0)

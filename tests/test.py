@@ -8,5 +8,5 @@ f = SoftRound(k=32)
 
 t = torch.linspace(-2, 2, 100)
 
-plt.plot(f(t))
+plt.plot(t, f(t))
 plt.show()
