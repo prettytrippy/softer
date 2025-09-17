@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-class SoftGt(nn.Module):
+class SoftLt(nn.Module):
     """
     """
 
@@ -10,4 +10,4 @@ class SoftGt(nn.Module):
         self.k = k
 
     def forward(self, x, y):
-        return torch.sigmoid(self.k * (x - y))
+        return torch.sigmoid(self.k * (y - x))
