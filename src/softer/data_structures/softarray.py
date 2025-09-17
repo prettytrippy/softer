@@ -3,65 +3,101 @@ import torch.nn as nn
 
 class SoftArray(nn.Module):
     """
-    SoftArray is an array-like module with fully differentiable operations.
-    All standard functionality (iteration, length) is implemented.
-    Getting and setting values, usually a non-differentiable operation,
-    is made possible by approximating one-hot vectors with Gaussians.
-    
-    TODO:
-    - Aggregate functions (max, mean,...)
-    - Arithmetic with other tensors
-    - Error handling and logging
+    Soft, differentiable array of length n where each element has payload shape `shape`.
+    Axis 0 is the index axis; `shape` describes the per-item payload (may be empty for scalars).
     """
 
-    def __init__(self, n, d=1, data=None, k=8) -> None:
+    def __init__(
+        self,
+        n: int,
+        *,
+        shape: tuple = (),
+        data=None,
+        k: float = 2.0,
+        dtype: torch.dtype = torch.float64,
+        device=None,
+        learnable: bool = False,
+    ):
         super().__init__()
+        if not isinstance(shape, tuple):
+            raise TypeError("`shape` must be a tuple")
+        self.n = int(n)
+        self.shape = shape
+        self.k = float(k)
 
         if data is None:
-            data = torch.zeros((n, d), dtype=torch.float64)
+            tensor = torch.zeros((self.n, *self.shape), dtype=dtype, device=device)
+        else:
+            tensor = torch.as_tensor(data, dtype=dtype, device=device)
+            if tensor.shape != (self.n, *self.shape):
+                raise ValueError(
+                    f"`data` must have shape {(self.n, *self.shape)}, got {tuple(tensor.shape)}"
+                )
 
-        self.data = nn.parameter.Buffer(data)
-        self.n = n
-        self.k = k
+        if learnable:
+            self.data = nn.Parameter(tensor)
+        else:
+            self.register_buffer("data", tensor)
 
-    def onehot(self, m):
+    def _onehot(self, m):
         """
-        Generates a pseudo-Gaussian, centered at m.
+        Pseudo-Gaussian weights over index axis (n,). Supports fractional m.
         """
-        x = torch.arange(self.n, dtype=self.data.dtype)
-        return 1.0 / torch.cosh(self.k * (x - m))
+        x = torch.arange(self.n, dtype=self.data.dtype, device=self.data.device)
+        w = 1.0 / torch.cosh(self.k * (x - m))
+        w = w / (w.sum() + torch.finfo(w.dtype).eps)
+        return w  # (n,)
 
-    def forward(self, x):
-        # It's not clear what to do here.
-        # Should softarray(x) be softarray[x]?
-        return self.data
-
-    def __repr__(self):
-        return str(self.data)
-
-    def __getitem__(self, index):
-        indexer = self.onehot(index)
-        return indexer @ self.data
-
-    def __setitem__(self, index, value):
-        if not isinstance(value, torch.Tensor):
-            value = torch.tensor(value)
-
-        vals = value.repeat(self.n, 1)
-        onehot = self.onehot(index).unsqueeze(1)
-
-        self.data += onehot * (vals - self.data)
-
-        # self.data -= onehot * self.data
-        # self.data += onehot * vals
+    def _wview(self, w):
+        return w.view(self.n, *([1] * len(self.shape)))
 
     def __len__(self):
         return self.n
 
+    def __repr__(self):
+        return f"SoftArray with {self.n} elements of shape {self.shape} and smoothing value {self.k}\n{self.data})"
+
+    def forward(self, x):
+        # What to do?
+        return self.data
+
+    def __getitem__(self, index):
+        """
+        Soft read at `index` (can be float). Returns a tensor of shape `shape`.
+        """
+        w = self._onehot(index)                        # (n,)
+        wv = self._wview(w)                            # (n, *1s)
+        return (wv * self.data).sum(dim=0)             # (*shape,)
+
+    def __setitem__(self, index, value):
+        """
+        Soft write: blends current data toward `value` at `index`.
+        Accepts any `value` broadcastable to `shape` (including scalar).
+        """
+        v = torch.as_tensor(value, dtype=self.data.dtype, device=self.data.device)
+
+        try:
+            v_b = torch.broadcast_to(v, self.shape) if v.shape != self.shape else v
+        except RuntimeError as e:
+            raise ValueError(
+                f"value with shape {tuple(v.shape)} is not broadcastable to {self.shape}"
+            ) from e
+
+        vals = v_b.unsqueeze(0).expand(self.n, *self.shape)  # (n, *shape)
+        w = self._onehot(index)
+        wv = self._wview(w)                                   # (n, *1s)
+
+        new_data = self.data + wv * (vals - self.data)        # (n, *shape)
+
+        if isinstance(self.data, nn.Parameter):
+            self.data.data = new_data
+        else:
+            self.data = new_data
+
     def __iter__(self):
-        for idx in range(self.n):
-            yield self[idx]
+        for i in range(self.n):
+            yield self[i]
 
     def __reversed__(self):
-        for idx in range(self.n-1, -1, -1):
-            yield self[idx]
+        for i in range(self.n - 1, -1, -1):
+            yield self[i]
