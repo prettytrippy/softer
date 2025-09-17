@@ -11,4 +11,4 @@ class SoftRound(nn.Module):
         self.softmod = SoftMod(k)
 
     def forward(self, x):
-        return x - self.softmod(x, 1.0) + 0.5
+        return x - self.softmod(x + 0.5, 1.0)

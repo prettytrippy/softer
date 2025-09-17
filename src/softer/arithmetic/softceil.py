@@ -11,4 +11,4 @@ class SoftCeil(nn.Module):
         self.softmod = SoftMod(k)
 
     def forward(self, x):
-        return x - self.softmod(x, 1.0) + 1
+        return x - self.softmod(x + 1.0, 1.0) 
