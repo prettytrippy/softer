@@ -2,13 +2,11 @@ import torch
 import matplotlib.pyplot as plt 
 from tqdm import tqdm
 # from softmatrix import SoftMatrix
-from softer.softstep import SoftStep
-from softer.arithmetic.softmin import SoftMin
+from softer.arithmetic.softround import SoftRound
 
-f = SoftMin(k=32)
+f = SoftRound(k=32)
 
-t = torch.linspace(-5, 5, 100)
+t = torch.linspace(-2, 2, 100)
 
-print(f(t))
-# plt.plot(f(t))
-# plt.show()
+plt.plot(f(t))
+plt.show()

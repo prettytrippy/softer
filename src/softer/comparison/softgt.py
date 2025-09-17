@@ -1,8 +1,7 @@
 import torch
 import torch.nn as nn
-import numpy as np
 
-class SoftStep(nn.Module):
+class SoftGt(nn.Module):
     """
     """
 
@@ -10,7 +9,4 @@ class SoftStep(nn.Module):
         super().__init__()
         self.k = k
 
-    def forward(self, x):
-        return torch.sigmoid(self.k * x)
-        
-
+    
