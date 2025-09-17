@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-class SoftMatrix(nn.Module):
+class SoftArray(nn.Module):
     """
     SoftArray is an array-like module with fully differentiable operations.
     All standard functionality (iteration, length) is implemented.
