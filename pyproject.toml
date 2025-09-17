@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=69", "setuptools-scm>=8", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "softer"
+dynamic = ["version"]
+description = "Deep learning modules for differentiable computing."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+authors = [{ name = "Richard Dow", email = "trippdow@gmail.com" }]
+keywords = ["deep-learning", "machine-learning", "pytorch", "modules", "differentiable", "autograd"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence"
+]
+
+dependencies = [
+  "numpy>=1.23",
+  "torch>=2.2,<3",
+  "matplotlib>=3.7",
+  "tqdm>=4.65",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "ruff", "black", "mypy", "build", "twine", "pre-commit"]
+
+[project.urls]
+Homepage = "https://github.com/prettytrippy/softer"
+Issues = "https://github.com/prettytrippy/softer/issues"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude = ["tests*", "docs*", "examples*"]
+
+[tool.setuptools_scm]
+version_scheme = "no-guess-dev"
+local_scheme = "node-and-date"
