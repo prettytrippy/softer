@@ -2,11 +2,11 @@ import torch
 import matplotlib.pyplot as plt 
 from tqdm import tqdm
 # from softmatrix import SoftMatrix
-from softer.comparison.softeq import SoftEq
+from softer.arithmetic.softdivides import SoftDivides
 
-f = SoftEq(k=32)
+f = SoftDivides(k=32)
 
-t = torch.linspace(-2, 2, 100)
+t = torch.linspace(-5, 5, 100)
 
-plt.plot(t, f(t, 1))
+plt.plot(t, f(t, 3))
 plt.show()
