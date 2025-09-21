@@ -2,7 +2,7 @@ import torch
 import random
 
 from softer.data_structures.softarray import SoftArray
-from softer.control.ifelse import IfElse
+from softer.ifelse import IfElse
 from softer.comparison.softgt import SoftGt
 
 k = 8

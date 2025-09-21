@@ -1,46 +1,45 @@
 import torch
+import numpy as np
 
 from softer.arithmetic.softdivides import SoftDivides
+from softer.arithmetic.softround import SoftRound
 from softer.softstep import SoftStep
 from softer.ifelse import IfElse
+from softer.dowhile import DoWhile
 from softer.comparison.softeq import SoftEq
-from softer.arithmetic.softround import SoftRound
+from softer.comparison.softgt import SoftGt
 
-MAX_NUM = int(1e2)
-k = 1
+k = 3
 
 def num_divisors(n):
-    divides = SoftDivides(k=k)
-    eq = SoftEq(k=k)
-    ifelse = IfElse()
+    """
+    Return the number of unique divisors of n, between 1 and n (exclusive).
+    """
 
-    x = torch.arange(2, MAX_NUM, dtype=torch.float64)
-    divisors = ifelse(eq(n, x), 0, divides(n, x))
-    
-    return torch.sum(divisors)
+    eq = SoftEq(k=k)
+    gt = SoftGt(k=k)
+    ifelse = IfElse()
+    dowhile = DoWhile()
+    divides = SoftDivides(k=k)
+
+    def condition(i, x):
+        # Stop when we hit half of n
+        return gt(i, n / 2)
+
+    def func(i, x):
+        # If i is a divisor of n, add 1 to x
+        return x + divides(n, i)
+
+    # Pretty clunky, but 2 and 3 misbehave, given the stopping criterion.
+    return ifelse(eq(n,torch.tensor(2.0)), 0, 
+           ifelse(eq(n,torch.tensor(3.0)), 0, 
+           dowhile(condition, func, x=torch.tensor(0), i=1)))
 
 def is_prime(n):
     step = SoftStep(k=k)
     divisors = num_divisors(n)
     return 1 - step(divisors - 0.5)
 
-def find_closest_prime(x):
-    round = SoftRound()
-    x = torch.nn.Parameter(torch.tensor(x, dtype=torch.float64))
-
-    loss_fn = torch.nn.MSELoss()
-    optimizer = torch.optim.SGD([x], lr=0.001, momentum=0.9)
-
-    for i in range(1000):
-        optimizer.zero_grad()
-
-        y = is_prime(x)
-
-        loss = loss_fn(y, torch.tensor(1.0, dtype=torch.float64))
-        loss.backward()
-        optimizer.step()
-
-    return round(x).item()
-
-for i in range(2, 100):
-    print(find_closest_prime(i))
+if __name__ == "__main__":
+    for i in range(2, 20):
+        print(i, is_prime(i))
