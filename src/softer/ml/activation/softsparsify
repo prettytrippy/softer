@@ -1,0 +1,18 @@
+import torch
+import torch.nn as nn
+import numpy as np
+from softer.softboxcar import SoftBoxcar
+
+
+class SoftSparsify(nn.Module):
+    """
+    """
+
+    def __init__(self, k=2) -> None:
+        super().__init__()
+        self.boxcar = SoftBoxcar(k)
+
+    def forward(self, x, c):
+        return x - x * self.boxcar(x, c)
+        
+

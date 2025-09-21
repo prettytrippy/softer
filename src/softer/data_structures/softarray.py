@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from softer.softboxcar import SoftBoxcar
 
 class SoftArray(nn.Module):
     """
@@ -25,6 +26,8 @@ class SoftArray(nn.Module):
         self.shape = shape
         self.k = float(k)
 
+        self.boxcar = SoftBoxcar(k=k)
+
         if data is None:
             tensor = torch.zeros((self.n, *self.shape), dtype=dtype, device=device)
         else:
@@ -44,7 +47,7 @@ class SoftArray(nn.Module):
         Pseudo-Gaussian weights over index axis (n,). Supports fractional m.
         """
         x = torch.arange(self.n, dtype=self.data.dtype, device=self.data.device)
-        w = 1.0 / torch.cosh(self.k * (x - m))
+        w = self.boxcar(x - m, 0.5)
         w = w / (w.sum() + torch.finfo(w.dtype).eps)
         return w  # (n,)
 

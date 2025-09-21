@@ -5,7 +5,7 @@ from softer.data_structures.softarray import SoftArray
 from softer.ifelse import IfElse
 from softer.comparison.softgt import SoftGt
 
-k = 8
+k = 32
 
 def bubble_sort(arr):
     # Define control flow and condition
